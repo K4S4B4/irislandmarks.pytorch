@@ -121,20 +121,30 @@ class IrisLandmarks(nn.Module):
         
         
     def forward(self, x):
+        ##################################
+        x = x[:,:,:,[2, 1, 0]] # BRG to RGB
+        x = x.permute(0,3,1,2).float()
+        x = x / 127.5 - 1.0
+        ##################################
+
         # TFLite uses slightly different padding on the first conv layer
         # than PyTorch, so do it manually.
         x = F.pad(x, [0, 1, 0, 1], "constant", 0)
-        b = x.shape[0]      # batch size, needed for reshaping later
+        #b = x.shape[0]      # batch size, needed for reshaping later ####################################
 
         x = self.backbone(x)            # (b, 128, 8, 8)
         
         e = self.split_eye(x)           # (b, 213, 1, 1)    
-        e = e.view(b, -1)               # (b, 213)
+        #e = e.view(b, -1)               # (b, 213) ####################################
         
         i = self.split_iris(x)          # (b, 15, 1, 1)
-        i = i.reshape(b, -1)            # (b, 15)
+        #i = i.reshape(b, -1)            # (b, 15) ####################################
         
-        return [e, i]
+        ####################################
+        return e.view(-1, 71, 3), i.view(-1, 5, 3)
+        ####################################
+        
+        #return [e, i] ####################################
 
     def _device(self):
         """Which device (CPU or GPU) is being used by this model?"""
